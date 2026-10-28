@@ -238,10 +238,10 @@
 
 <script>
     // Configuración de Supabase
-    const SUPABASE_URL = 'https://ugxankjgfrgvcmxphpch.supabase.co/rest/v1/';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVneGFua2pnZnJndmNteHBocGNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyMTM1MTYsImV4cCI6MjEwODc4OTUxNn0.KK7AjrueckoIB6AmHWWpWC0A7U6SZizI3P70pwNJ1Nk';
+const SUPABASE_URL = 'https://ugxankjgfrgvcmxphpch.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVneGFua2pnZnJndmNteHBocGNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyMTM1MTYsImV4cCI6MjEwODc4OTUxNn0.KK7AjrueckoIB6AmHWWpWC0A7U6SZizI3P70pwNJ1Nk';
     
-    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const form = document.getElementById('citaForm');
     const citasContainer = document.getElementById('citasContainer');
