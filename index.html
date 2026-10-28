@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VetCare - Sistema de Citas Médicas</title>
+    <!-- SDK Oficial de Supabase desde CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-body: #0f172a;
+            --bg-card: #1e293b;
+            --primary: #0ea5e9;
+            --primary-hover: #0284c7;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1000px;
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        h1, h2 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+        }
+
+        .header-title {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header-title h1 {
+            font-size: 2rem;
+            color: var(--text-main);
+        }
+
+        .header-title span {
+            color: var(--primary);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-main);
+            font-size: 0.95rem;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .appointments-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .appointment-item {
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--primary);
+            padding: 15px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .appointment-info h3 {
+            font-size: 1.05rem;
+            color: var(--text-main);
+        }
+
+        .appointment-info p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 3px;
+        }
+
+        .badge {
+            background: rgba(14, 165, 233, 0.15);
+            color: var(--primary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .btn-delete {
+            background: transparent;
+            color: var(--danger);
+            border: 1px solid var(--danger);
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            width: auto;
+        }
+
+        .btn-delete:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        .status-msg {
+            margin-top: 10px;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header-title">
+        <h1>Clínica Veterinaria <span>VetCare</span></h1>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Sistema de Agendamiento de Citas Médicas</p>
+    </div>
+
+    <!-- Formulario de Registro -->
+    <div class="card">
+        <h2>Agendar Nueva Cita</h2>
+        <form id="citaForm">
+            <div class="form-group">
+                <label for="dueno">Nombre del Propietario:</label>
+                <input type="text" id="dueno" required placeholder="Ej. Carlos Ruíz">
+            </div>
+            
+            <div class="form-group">
+                <label for="mascota">Nombre de la Mascota:</label>
+                <input type="text" id="mascota" required placeholder="Ej. Firulais (Perro)">
+            </div>
+
+            <div class="form-group">
+                <label for="servicio">Servicio Requerido:</label>
+                <select id="servicio" required>
+                    <option value="Consulta General">Consulta General</option>
+                    <option value="Vacunación">Vacunación y Desparasitación</option>
+                    <option value="Estética y Baño">Estética y Baño</option>
+                    <option value="Cirugía / Especialidad">Cirugía / Especialidad</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="fecha">Fecha y Hora:</label>
+                <input type="datetime-local" id="fecha" required>
+            </div>
+
+            <div class="form-group">
+                <label for="observaciones">Observaciones / Motivo:</label>
+                <textarea id="observaciones" rows="2" placeholder="Síntomas o notas adicionales..."></textarea>
+            </div>
+
+            <button type="submit" id="btnGuardar">Guardar Cita</button>
+            <div id="statusMsg" class="status-msg"></div>
+        </form>
+    </div>
+
+    <!-- Lista de Citas Agendadas -->
+    <div class="card">
+        <h2>Agenda de Citas Activas</h2>
+        <div id="loading" style="color: var(--text-muted); font-size: 0.9rem;">Cargando base de datos...</div>
+        <div class="appointments-list" id="citasContainer"></div>
+    </div>
+</div>
+
+<script>
+    // Configuración de Supabase
+    const SUPABASE_URL = 'https://ugxankjgfrgvcmxphpch.supabase.co/rest/v1/';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVneGFua2pnZnJndmNteHBocGNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyMTM1MTYsImV4cCI6MjEwODc4OTUxNn0.KK7AjrueckoIB6AmHWWpWC0A7U6SZizI3P70pwNJ1Nk';
+    
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const form = document.getElementById('citaForm');
+    const citasContainer = document.getElementById('citasContainer');
+    const loading = document.getElementById('loading');
+    const statusMsg = document.getElementById('statusMsg');
+
+    // Cargar citas al iniciar la página
+    document.addEventListener('DOMContentLoaded', obtenerCitas);
+
+    // Guardar Cita en la Base de Datos
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const dueno = document.getElementById('dueno').value;
+        const mascota = document.getElementById('mascota').value;
+        const servicio = document.getElementById('servicio').value;
+        const fecha = document.getElementById('fecha').value;
+        const observaciones = document.getElementById('observaciones').value;
+
+        statusMsg.style.color = '#0ea5e9';
+        statusMsg.textContent = 'Guardando en la base de datos...';
+
+        const { data, error } = await db
+            .from('citas')
+            .insert([{ dueno, mascota, servicio, fecha, observaciones }]);
+
+        if (error) {
+            statusMsg.style.color = '#ef4444';
+            statusMsg.textContent = 'Error al agendar: ' + error.message;
+        } else {
+            statusMsg.style.color = '#10b981';
+            statusMsg.textContent = '¡Cita registrada correctamente!';
+            form.reset();
+            obtenerCitas();
+        }
+    });
+
+    // Consultar Citas desde la Base de Datos
+    async function obtenerCitas() {
+        loading.style.display = 'block';
+        citasContainer.innerHTML = '';
+
+        const { data: citas, error } = await db
+            .from('citas')
+            .select('*')
+            .order('fecha', { ascending: true });
+
+        loading.style.display = 'none';
+
+        if (error) {
+            citasContainer.innerHTML = `<p style="color:var(--danger)">Error: ${error.message}</p>`;
+            return;
+        }
+
+        if (citas.length === 0) {
+            citasContainer.innerHTML = '<p style="color:var(--text-muted)">No hay citas programadas.</p>';
+            return;
+        }
+
+        citas.forEach(cita => {
+            const fechaFormateada = new Date(cita.fecha).toLocaleString('es-MX', {
+                dateStyle: 'short',
+                timeStyle: 'short'
+            });
+
+            const div = document.createElement('div');
+            div.className = 'appointment-item';
+            div.innerHTML = `
+                <div class="appointment-info">
+                    <h3>${cita.mascota} <span style="color:var(--text-muted); font-size:0.85rem">(${cita.dueno})</span></h3>
+                    <p><strong style="color:var(--primary)">${cita.servicio}</strong> — ${fechaFormateada}</p>
+                    ${cita.observaciones ? `<p style="font-size:0.8rem; font-style:italic;">"${cita.observaciones}"</p>` : ''}
+                </div>
+                <div>
+                    <button class="btn-delete" onclick="eliminarCita(${cita.id})">Cancelar</button>
+                </div>
+            `;
+            citasContainer.appendChild(div);
+        });
+    }
+
+    // Cancelar/Eliminar Cita
+    async function eliminarCita(id) {
+        if (!confirm('¿Deseas cancelar esta cita?')) return;
+
+        const { error } = await db
+            .from('citas')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            alert('Error al cancelar: ' + error.message);
+        } else {
+            obtenerCitas();
+        }
+    }
+</script>
+
+</body>
+</html>
